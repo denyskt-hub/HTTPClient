@@ -15,7 +15,7 @@ class URLSessionHTTPClient {
 		self.session = session
 	}
 	
-	func perform(request: URLRequest, completion: @escaping (HTTPClient.Result) -> Void) {
+	func perform(_ request: URLRequest, completion: @escaping (HTTPClient.Result) -> Void) {
 		session.dataTask(with: request) { data, response, error in
 			if let error {
 				completion(.failure(error))
@@ -47,7 +47,7 @@ final class URLSessionHTTPClientTests: XCTestCase {
 		let error = NSError(domain: "any error", code: 1)
 		URLProtocolStub.stub(error: error)
 		
-		sut.perform(request: anyRequest) { result in
+		sut.perform(anyRequest) { result in
 			switch result {
 			case let .failure(receivedError as NSError):
 				XCTAssertEqual(receivedError.domain, error.domain)
