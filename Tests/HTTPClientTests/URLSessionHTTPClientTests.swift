@@ -11,6 +11,8 @@ import HTTPClient
 class URLSessionHTTPClient {
 	private let session: URLSession
 	
+	private struct UnexpectedValuesError: Error {}
+	
 	init(session: URLSession = .shared) {
 		self.session = session
 	}
@@ -19,6 +21,9 @@ class URLSessionHTTPClient {
 		session.dataTask(with: request) { data, response, error in
 			if let error {
 				completion(.failure(error))
+			}
+			else {
+				completion(.failure(UnexpectedValuesError()))
 			}
 		}.resume()
 	}
@@ -61,7 +66,7 @@ final class URLSessionHTTPClientTests: XCTestCase {
 		let exp = expectation(description: "Wait request completion")
 		
 		let error = NSError(domain: "any error", code: 1)
-		URLProtocolStub.stub(error: error)
+		URLProtocolStub.stub(data: nil, response: nil, error: error)
 		
 		sut.perform(anyRequest) { result in
 			switch result {
@@ -70,6 +75,29 @@ final class URLSessionHTTPClientTests: XCTestCase {
 				
 			default:
 				XCTFail("Expected failure with \(error), got \(result)")
+			}
+			exp.fulfill()
+		}
+		
+		wait(for: [exp], timeout: 1.0)
+	}
+	
+	func test_performRequest_failsOnAllNilValues() {
+		let sut = makeSUT()
+		let anyUrl = URL(string: "http://any-url.com")!
+		let anyRequest = URLRequest(url: anyUrl)
+		
+		let exp = expectation(description: "Wait request completion")
+		
+		URLProtocolStub.stub(data: nil, response: nil, error: nil)
+		
+		sut.perform(anyRequest) { result in
+			switch result {
+			case .failure:
+				break
+				
+			default:
+				XCTFail("Expected failure, got \(result) instead")
 			}
 			exp.fulfill()
 		}
@@ -87,13 +115,15 @@ final class URLSessionHTTPClientTests: XCTestCase {
 	
 	class URLProtocolStub: URLProtocol {
 		private struct Stub {
+			let data: Data?
+			let response: URLResponse?
 			let error: Error?
 		}
 		
 		private static var stub: Stub?
 		
-		static func stub(error: Error?) {
-			stub = .init(error: error)
+		static func stub(data: Data?, response: URLResponse?, error: Error?) {
+			stub = .init(data: data, response: response, error: error)
 		}
 		
 		private static var requestObserver: ((URLRequest) -> Void)?
