@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "97A5B34A-D6D6-4E72-A71F-B6793838F084",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "HTTPClientTests",
+        "name" : "HTTPClientTests"
+      }
+    }
+  ],
+  "version" : 1
+}
