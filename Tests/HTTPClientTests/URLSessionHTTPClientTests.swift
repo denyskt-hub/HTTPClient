@@ -60,15 +60,12 @@ final class URLSessionHTTPClientTests: XCTestCase {
 	
 	func test_performRequest_failsOnRequestError() {
 		let sut = makeSUT()
-		let anyUrl = URL(string: "http://any-url.com")!
-		let anyRequest = URLRequest(url: anyUrl)
-		
-		let exp = expectation(description: "Wait request completion")
-		
 		let error = NSError(domain: "any error", code: 1)
 		URLProtocolStub.stub(data: nil, response: nil, error: error)
 		
-		sut.perform(anyRequest) { result in
+		let exp = expectation(description: "Wait request completion")
+		
+		sut.perform(anyRequest()) { result in
 			switch result {
 			case let .failure(receivedError as NSError):
 				XCTAssertEqual(receivedError.domain, error.domain)
@@ -84,14 +81,11 @@ final class URLSessionHTTPClientTests: XCTestCase {
 	
 	func test_performRequest_failsOnAllNilValues() {
 		let sut = makeSUT()
-		let anyUrl = URL(string: "http://any-url.com")!
-		let anyRequest = URLRequest(url: anyUrl)
+		URLProtocolStub.stub(data: nil, response: nil, error: nil)
 		
 		let exp = expectation(description: "Wait request completion")
 		
-		URLProtocolStub.stub(data: nil, response: nil, error: nil)
-		
-		sut.perform(anyRequest) { result in
+		sut.perform(anyRequest()) { result in
 			switch result {
 			case .failure:
 				break
@@ -109,6 +103,14 @@ final class URLSessionHTTPClientTests: XCTestCase {
 	
 	private func makeSUT() -> URLSessionHTTPClient {
 		URLSessionHTTPClient()
+	}
+	
+	private func anyURL() -> URL {
+		URL(string: "http://any-url.com")!
+	}
+	
+	private func anyRequest() -> URLRequest {
+		return URLRequest(url: anyURL())
 	}
 	
 	// MARK: - URLProtocolStub
