@@ -22,6 +22,9 @@ class URLSessionHTTPClient {
 			if let error {
 				completion(.failure(error))
 			}
+			else if let data = data, let response = response as? HTTPURLResponse {
+				completion(.success((data, response)))
+			}
 			else {
 				completion(.failure(UnexpectedValuesError()))
 			}
@@ -78,6 +81,16 @@ final class URLSessionHTTPClientTests: XCTestCase {
 		XCTAssertNotNil(resultErrorFor(data: anyData(), response: nonHTTPURLResponse(), error: nil))
 	}
 	
+	func test_performRequest_succeedsWithEmptyDataOnHTTPURLResponseWithNilData() {
+		let response = anyHTTPURLResponse()
+		let receivedValues = resultValuesFor(data: nil, response: response, error: nil)
+		
+		let emptyData = Data()
+		XCTAssertEqual(receivedValues?.data, emptyData)
+		XCTAssertEqual(receivedValues?.response.url, response.url)
+		XCTAssertEqual(receivedValues?.response.statusCode, response.statusCode)
+	}
+	
 	// MARK: - Helpers
 	
 	private func makeSUT() -> URLSessionHTTPClient {
@@ -86,12 +99,26 @@ final class URLSessionHTTPClientTests: XCTestCase {
 	
 	private func resultErrorFor(data: Data?, response: URLResponse?, error: Error?, file: StaticString = #file, line: UInt = #line) -> Error? {
 		let result = resultFor(data: data, response: response, error: error)
+		
 		switch result {
 		case let .failure(error):
 			return error
 			
 		default:
 			XCTFail("Expected failure, got \(result) instead", file: file, line: line)
+			return nil
+		}
+	}
+	
+	private func resultValuesFor(data: Data?, response: URLResponse?, error: Error?, file: StaticString = #file, line: UInt = #line) -> (data: Data, response: HTTPURLResponse)? {
+		let result = resultFor(data: data, response: response, error: error)
+		
+		switch result {
+		case let .success(values):
+			return values
+			
+		default:
+			XCTFail("Expected success, got \(result) instead", file: file, line: line)
 			return nil
 		}
 	}
@@ -178,6 +205,14 @@ final class URLSessionHTTPClientTests: XCTestCase {
 			if let requestObserver = URLProtocolStub.requestObserver {
 				client?.urlProtocolDidFinishLoading(self)
 				return requestObserver(request)
+			}
+			
+			if let data = URLProtocolStub.stub?.data {
+				client?.urlProtocol(self, didLoad: data)
+			}
+			
+			if let response = URLProtocolStub.stub?.response {
+				client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
 			}
 			
 			if let error = URLProtocolStub.stub?.error {
