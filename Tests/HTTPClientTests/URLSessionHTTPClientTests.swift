@@ -27,7 +27,7 @@ class URLSessionHTTPClient {
 final class URLSessionHTTPClientTests: XCTestCase {
 	func test_performRequest_failsOnRequestError() {
 		URLProtocolStub.startInterceptingRequests()
-		let sut = URLSessionHTTPClient()
+		let sut = makeSUT()
 		let anyUrl = URL(string: "http://any-url.com")!
 		let anyRequest = URLRequest(url: anyUrl)
 		
@@ -54,8 +54,12 @@ final class URLSessionHTTPClientTests: XCTestCase {
 	
 	// MARK: - Helpers
 	
+	private func makeSUT() -> URLSessionHTTPClient {
+		URLSessionHTTPClient()
+	}
+	
 	class URLProtocolStub: URLProtocol {
-		struct Stub {
+		private struct Stub {
 			let error: Error?
 		}
 		
